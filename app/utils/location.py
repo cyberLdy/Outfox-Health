@@ -1,30 +1,20 @@
-from geopy.geocoders import Nominatim
+import pandas as pd
 from geopy.distance import geodesic
 import functools
-import time
 
-# Cache for ZIP code coordinates
-zip_cache = {}
+# Load ZIP codes once when module is imported
+print("Loading ZIP code database...")
+zip_df = pd.read_csv('uszips.csv', encoding='latin-1')
+print(f"Loaded {len(zip_df)} ZIP codes")
 
-@functools.lru_cache(maxsize=1000)
+# Create a dictionary for fast lookup
+zip_coords = {}
+for _, row in zip_df.iterrows():
+    zip_coords[str(row['zip'])] = (row['lat'], row['lng'])
+
 def get_zip_coordinates(zip_code: str):
-    """Get latitude and longitude for a ZIP code"""
-    if zip_code in zip_cache:
-        return zip_cache[zip_code]
-    
-    try:
-        geolocator = Nominatim(user_agent="healthcare-navigator")
-        location = geolocator.geocode(f"{zip_code}, USA")
-        
-        if location:
-            coords = (location.latitude, location.longitude)
-            zip_cache[zip_code] = coords
-            time.sleep(1)  # Be nice to the free geocoding service
-            return coords
-    except Exception as e:
-        print(f"Error geocoding {zip_code}: {e}")
-    
-    return None
+    """Get latitude and longitude for a ZIP code from our database"""
+    return zip_coords.get(zip_code)
 
 def calculate_distance(zip1: str, zip2: str) -> float:
     """Calculate distance in km between two ZIP codes"""
@@ -34,4 +24,4 @@ def calculate_distance(zip1: str, zip2: str) -> float:
     if coords1 and coords2:
         return geodesic(coords1, coords2).kilometers
     
-    return float('inf')  # If we can't calculate, return infinite distance
+    return float('inf')  # If we can't find one of the ZIPs

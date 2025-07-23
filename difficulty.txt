@@ -1,0 +1,65 @@
+# difficulty.txt
+
+## Problem: Geocoding ZIP Codes for Radius Filtering
+
+While implementing the `/providers` endpoint, we needed to support:
+> "Find hospitals within a radius (in km) of a ZIP code."
+
+This required geocoding (converting ZIP → latitude/longitude) and calculating distances between user input and hospital locations.
+
+---
+
+### Attempt 1: Free Geocoding API (Nominatim)
+
+We initially used [`geopy.Nominatim`](https://nominatim.org/) to convert ZIP codes to coordinates. However, during the ETL or query phase, this API:
+
+- Frequently **timed out** on high volume lookups (`read timeout`)
+- Returned **HTTP 429 (Too Many Requests)** errors after a few hundred requests
+- Had rate limits unsuitable for MVP-scale batch loads
+
+💥 **Conclusion**: Nominatim is not reliable for large-scale ZIP resolution, especially during seeding or real-time queries.
+
+---
+
+### Attempt 2: Use PostgreSQL + PostGIS for geospatial filtering
+
+PostGIS is the ideal choice for radius-based filtering in SQL:
+```sql
+ST_DistanceSphere(ST_MakePoint(lon1, lat1), ST_MakePoint(lon2, lat2))
+However, Supabase does not currently support PostGIS extensions in shared/free-tier databases, 
+and we were constrained to use Supabase per the environment setup.
+
+
+Final Solution: Static ZIP→Coordinates Mapping via SimpleMaps
+To bypass the API and avoid relying on PostGIS, we adopted:
+
+📦 SimpleMaps US ZIP Code Dataset
+→ https://simplemaps.com/data/us-zips (free tier)
+
+This provided a local CSV containing:
+
+ZIP code
+
+Latitude
+
+Longitude
+
+City/State metadata
+
+✅ We integrated this directly during the ETL phase:
+
+For each hospital row, we join the ZIP to its (lat, lon)
+
+Stored lat and lon alongside each provider record
+
+Distance is calculated in Python using [geopy.distance.geodesic()]
+
+This solution is fast, offline, and avoids API limits or paid geocoding services.
+
+Trade-offs
+Option	Pros	Cons
+Nominatim	Simple, no setup	Rate limited, unreliable
+PostGIS	Scalable, SQL-native	Not supported in Supabase
+SimpleMaps CSV ✅	Fast, offline, free	Slightly less accurate for edge ZIPs
+
+✅ Final implementation uses SimpleMaps during ETL + Python-based distance filtering at runtime. This provided the best balance of performance, accuracy, and cost-free operation.
