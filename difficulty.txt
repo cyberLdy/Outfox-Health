@@ -50,4 +50,24 @@ Also, our answer formatting isn't smart enough. Let's fix both issues.
 {'answer': 'Found 1371 results. Here are the details:\n- Prisma Health  Patewood Hospital in Greenville, SC\n- Beckley Arh Hospital in Beckley, WV\n- Steward North Shore Medical Center in Miami, FL\n- Halifax Health Medical Center in Daytona Beach, FL\n- Staten Island University Hospital in Staten Island, NY\n', 'sql_query': "SELECT p.name, p.city, p.state, r.rating \nFROM providers p\nJOIN procedures pr ON p.provider_id = pr.provider_id\nJOIN ratings r ON p.provider_id = r.provider_id\nWHERE pr.drg_code = 
 '470'\nORDER BY r.rating DESC;"}
 
-solution, update prompts
+solution, update prompts and formatting answer,
+
+logs:
+
+===== Test 1: What's the cheapest hospital for knee replacement? =====
+{'answer': 'The cheapest hospital is Cambridge Health Alliance in Cambridge, MA with an average covered charge of $17,785.20', 'sql_query': "SELECT p.name, p.city, p.state, procedures.avg_covered_charges \nFROM providers p \nJOIN procedures ON p.provider_id = procedures.provider_id \nWHERE procedures.drg_code = '470' \nORDER BY procedures.avg_covered_charges \nLIMIT 1;"}
+
+===== Test 2: Which hospitals have the best ratings for knee replacement? =====
+{'answer': 'The hospital with the best rating is Prisma Health  Patewood Hospital in Greenville, SC with a rating of 10/10', 'sql_query': "SELECT p.name, p.city, p.state, r.rating\nFROM providers p\nJOIN ratings r ON p.provider_id = r.provider_id\nJOIN procedures proc ON p.provider_id = proc.provider_id\nWHERE proc.drg_code = '470'\nORDER BY r.rating DESC;"}
+
+===== Test 3: Show me hospitals in NY with ratings above 8 =====
+{'answer': 'Found 28 results. Here are the top 5:\n- Wyoming County Community Hospital in Warsaw, NY\n- Bronxcare Hospital Center in Bronx, NY\n- Albany Medical Center Hospital in Albany, NY\n- Vassar Brothers Medical Center in Poughkeepsie, NY\n- Newark-Wayne Community Hospital in Newark, NY', 'sql_query': "SELECT providers.name, providers.city, providers.state, ratings.rating \nFROM providers\nJOIN ratings ON providers.provider_id = ratings.provider_id\nWHERE providers.state = 'NY' AND ratings.rating > 8;"}
+
+===== Test 4: What are the top 5 cheapest hospitals for DRG 23? =====
+{'answer': 'Here are the top 5 results:\n1. Adventist Healthcare Shady Grove Medical Center in Rockville, MD - $60,084.82\n2. Medstar Franklin Square Medical Center in Rosedale, MD - $64,792.20\n3. Suburban Hospital in Bethesda, MD - $65,351.78\n4. Ochsner Lsu Health Shreveport in Shreveport, LA - $75,299.67\n5. University Of Maryland Medical Center in Baltimore, MD - $82,564.88', 
+'sql_query': "SELECT providers.name, providers.city, providers.state, procedures.avg_covered_charges\nFROM procedures\nJOIN providers ON procedures.provider_id = providers.provider_id\nWHERE procedures.drg_code = '23'\nORDER BY procedures.avg_covered_charges\nLIMIT 5;"}
+
+===== Test 5: What's the capital of France? =====
+{'answer': '"I can only help with hospital pricing and quality information. Please ask about medical procedures, costs, or hospital ratings."', 'sql_query': None}
+
+it seems good now
