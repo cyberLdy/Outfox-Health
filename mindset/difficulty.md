@@ -84,3 +84,10 @@ Consistent SQL generation grounded in schema
 Robust NL→SQL conversion
 
 Clean formatted answers with fallback for off-topic queries
+
+
+# prompt desing
+the prompt design of near me question, they don't specific zipcode
+consider it as no zipcode
+
+how near is near? 50 miles?

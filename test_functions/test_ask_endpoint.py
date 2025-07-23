@@ -1,14 +1,17 @@
 import requests
 
 queries = [
-    {"question": "What's the cheapest hospital for knee replacement?"},
-    {"question": "Which hospitals have the best ratings for knee replacement?"},
-    {"question": "Show me hospitals in NY with ratings above 8"},
-    {"question": "What are the top 5 cheapest hospitals for DRG 23?"},
+    {"question": "Who is cheapest for DRG 470 within 25 miles of 10001?"},
+    {"question": "Who is cheapest for DRG 480 within 50 miles of 35235?"},
+    {"question": "What's the cheapest hospital for knee replacement near me?"},
+    {"question": "What's the cheapest hospital for HEART FAILURE AND SHOCK WITH MCC near me?"},
+    {"question": "Which hospitals have the best ratings for heart surgery?"},
+    {"question": "Who has the best ratings for heart surgery near 10032?"},
+    {"question": "What's the weather today?"}, # Out of scope
     {"question": "What's the capital of France?"}  # Out of scope
 ]
 
-endpoints = ["http://localhost:8000/ask", "http://127.0.0.1:8000/ask"]
+endpoints = [ "http://127.0.0.1:8000/ask"]
 
 for i, q in enumerate(queries, 1):
     print(f"\n===== Test {i}: {q['question']} =====")
