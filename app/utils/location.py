@@ -4,7 +4,7 @@ from geopy.distance import geodesic
 
 # Load ZIP codes once when module is imported
 print("Loading ZIP code database...")
-zip_df = pd.read_csv('uszips.csv', encoding='latin-1')
+zip_df = pd.read_csv('dataset/uszips.csv', encoding='latin-1')
 print(f"Loaded {len(zip_df)} ZIP codes")
 
 # Create a dictionary for fast lookup

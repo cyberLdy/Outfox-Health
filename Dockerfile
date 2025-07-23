@@ -16,10 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app ./app
 COPY etl.py .
 
-# Copy data files
-COPY uszips.csv .
-COPY MUP_INP_RY24_P03_V10_DY22_PrvSvc.csv .
-COPY Hospital_General_Information.csv .   
+# TO:
+COPY dataset ./dataset
 
 # Expose port
 EXPOSE 8000

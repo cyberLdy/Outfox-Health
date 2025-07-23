@@ -35,7 +35,7 @@ def run_etl():
     try:
         # Read CSV
         print("Reading CSV file...")
-        df = pd.read_csv('MUP_INP_RY24_P03_V10_DY22_PrvSvc.csv', encoding='latin-1')
+        df = pd.read_csv('dataset/MUP_INP_RY24_P03_V10_DY22_PrvSvc.csv', encoding='latin-1')
         print(f"Found {len(df)} rows")
         
         # Get unique providers
