@@ -1,3 +1,5 @@
+VIDEO: https://www.loom.com/share/8579fb024ffe407d8ef109ffd9bfdd0f
+
 # 🏥 Healthcare Cost Navigator (MVP)
 
 A fast, async web service that helps patients explore hospital costs and quality ratings for medical procedures (DRG codes). Includes a natural language assistant powered by OpenAI GPT for flexible querying.
