@@ -1,181 +1,164 @@
-# Healthcare Cost Navigator (MVP)
+# 🏥 Healthcare Cost Navigator (MVP)
 
-A lightweight web service that enables patients to search hospitals offering MS-DRG procedures, compare costs, view quality ratings, and ask questions in natural language.
+A fast, async web service that helps patients explore hospital costs and quality ratings for medical procedures (DRG codes). Includes a natural language assistant powered by OpenAI GPT for flexible querying.
 
 ---
 
 ## 🚀 Features
 
-* **Search Hospitals by Procedure**: DRG code or description + ZIP + radius
-* **Price Transparency**: Avg. covered charges, total payments, Medicare payments
-* **Provider Quality**: Mock star ratings (1-10) for hospitals
-* **AI Assistant**: Natural language interface via OpenAI
-* **Location-Aware**: Radius filtering using ZIP code coordinates
+- 🔍 **Search Hospitals** by DRG procedure, ZIP code, and radius
+- 💰 **Compare Costs**: View charges, payments, and discharges
+- ⭐ **Provider Ratings**: Mock 1–10 star quality ratings
+- 🤖 **AI Assistant**: Ask natural language questions, get grounded SQL-backed answers
+- ⚡ **FastAPI + async PostgreSQL** backend
 
 ---
 
-## 🛠 Tech Stack
+## 🧠 AI Assistant Capabilities
 
-* Python 3.11, FastAPI (async)
-* PostgreSQL (Supabase hosted)
-* async SQLAlchemy
-* OpenAI (GPT-4o)
-* Docker + Docker Compose
+Example queries supported:
 
----
-
-## ⚙️ Quick Start
-
-### Prerequisites
-
-* Docker + Docker Compose
-* Python 3.11+
-* Supabase account or local PostgreSQL
-* OpenAI API key
-
-### Setup
-
-```bash
-# Clone the repo
-$ git clone <your-repo-url>
-$ cd healthcare-cost-navigator
-
-# Create .env file
-$ cp .env.example .env  # Fill in DB + OpenAI keys
-
-# Install Python deps (if not using Docker)
-$ pip install -r requirements.txt
-
-# Run ETL script
-$ python etl.py
-
-# Start the API
-$ uvicorn app.main:app --reload
-```
-
-API: [http://localhost:8000](http://localhost:8000)
-Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- 💰 “What’s the cheapest hospital for knee replacement?”
+- 🏆 “Which hospitals have the best ratings for DRG 470?”
+- 📍 “Show me hospitals near 10001 within 25km”
+- ❌ “What’s the capital of France?” → Rejected as out of scope
 
 ---
 
-## 📡 Endpoints
+## 📦 Tech Stack
 
-### GET `/providers`
+| Component         | Description                          |
+|------------------|--------------------------------------|
+| Python 3.11       | Core backend logic                   |
+| FastAPI           | Async API framework                  |
+| async SQLAlchemy  | ORM for PostgreSQL                   |
+| Supabase (PostgreSQL) | Cloud database hosting          |
+| OpenAI GPT-4o     | LLM for NL→SQL translation           |
+| SimpleMaps        | ZIP-to-coordinates static mapping    |
+| Docker Compose    | Local dev setup                      |
 
-Search hospitals by DRG code/desc, ZIP code, and radius.
+---
 
-#### Params:
+## 🗄️ Database Schema
 
-* `drg`: e.g. `470` or `knee`
-* `zip`: ZIP code
-* `radius_km`: radius in kilometers
+Three main tables:
 
-#### Example
+- `providers`: Basic hospital info (ID, name, ZIP, etc.)
+- `procedures`: DRG procedures + average charges
+- `ratings`: Mock star ratings (1–10) for each provider
 
-```bash
-curl "http://localhost:8000/providers?drg=470&zip=10001&radius_km=40"
-```
+---
 
-#### Response
+## ⚙️ Setup Instructions
 
-```json
-{
-  "total_found": 20,
-  "providers": [
-    {
-      "provider_id": "330160",
-      "name": "Staten Island University Hospital",
-      "city": "Staten Island",
-      "state": "NY",
-      "zip_code": "10305",
-      "distance_km": 18.41,
-      "avg_covered_charges": 58545.5,
-      "avg_total_payments": 24447.15,
-      "avg_medicare_payments": 16855.06,
-      "total_discharges": 34,
-      "rating": 10,
-      "drg_code": "470",
-      "drg_description": "MAJOR HIP AND KNEE JOINT REPLACEMENT..."
-    }
-  ]
-}
-```
-
-### POST `/ask`
-
-Ask healthcare-related questions using natural language.
-
-#### Example
+### 1. Clone + Install
 
 ```bash
+git clone https://github.com/your/repo.git
+cd healthcare-cost-navigator
+2. Configure Environment
+Create a .env file:
+
+env
+Copy
+Edit
+DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
+OPENAI_API_KEY=your_openai_api_key
+3. Load Data
+bash
+Copy
+Edit
+pip install -r requirements.txt
+python etl.py
+4. Run Server
+bash
+Copy
+Edit
+uvicorn app.main:app --reload
+Open API docs at: http://localhost:8000/docs
+
+📡 API Endpoints
+GET /providers
+Search hospitals by DRG + ZIP + radius.
+
+Params:
+
+drg (required): DRG code or description (e.g. 470 or "knee replacement")
+
+zip (required): US ZIP code
+
+radius_km (required): Distance in kilometers
+
+Example:
+
+bash
+Copy
+Edit
+curl "http://localhost:8000/providers?drg=470&zip=10001&radius_km=30"
+POST /ask
+Ask natural language questions.
+
+Body:
+
+json
+Copy
+Edit
+{ "question": "Which hospitals have best ratings for hip replacement?" }
+Example:
+
+bash
+Copy
+Edit
 curl -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "Which hospitals in NY have ratings above 8?"}'
-```
+  -d '{"question": "Top 3 cheapest hospitals for DRG 23"}'
+🧪 Example Prompts
+Prompt	Response Type
+Cheapest hospital for knee replacement	Cost-based ranking
+Best hospitals in NY with DRG 291	Quality-based ranking
+Hospitals within 25km of 10001 for DRG 470	Geo + procedure
+Total number of DRG 470 discharges in NYC hospitals	Aggregation query
+What's the capital of France?	❌ Out of scope
 
-#### Response
+📌 Reflections on LLMs + SQL
+This project shows how LLMs + structured data enable natural language analytics with:
 
-```json
-{
-  "answer": "Found 28 results. Here are the top 5: ...",
-  "sql_query": "SELECT ..."
-}
-```
+✅ DRG codes, ZIPs, costs → Easy to map to SQL
+✅ Schema-aware prompting ensures accuracy
+✅ GPT-4o handles most questions well without RAG
 
----
+But real-world healthcare often involves unstructured data (PDFs, EHR notes, etc.). These require:
 
-## 💬 Sample AI Queries
+🔎 RAG pipelines (Retrieval-Augmented Generation)
 
-### ✅ Valid Queries
+🧠 Vector DBs (e.g. FAISS, Chroma) for semantic search
 
-* What's the cheapest hospital for knee replacement?
-* Top 5 cheapest hospitals for DRG 23
-* Which hospitals in Brooklyn perform the most hip replacements?
-* Show hospitals in NY with ratings above 8
-* How many hospitals in NY perform heart surgery?
+🔍 NLP-based data normalization
 
-### ❌ Out-of-Scope Queries
+🚀 Future Ideas
+Feature	Description
+🔍 Fuzzy DRG Search	Handle typo'd descriptions like "knee replace" → DRG 470
+📍 Natural Language Geo	Support "near Brooklyn" → ZIP code mapping
+📊 Chart-Friendly Output	JSON schema for frontend visualizations
+⚡ Query Caching	Speed up common question responses
+🧠 AI Intent Routing	Detect cost vs. rating vs. volume queries
 
-* What's the capital of France?
-* Tell me a joke
+📚 Data Sources
+CMS Medicare Inpatient Charges (NY sample)
 
----
+SimpleMaps ZIP Database (Free)
 
-## 🧠 Architecture Decisions
+Star ratings: Randomized mock data
 
-| Area          | Decision                                                           |
-| ------------- | ------------------------------------------------------------------ |
-| Schema        | Normalized (providers, procedures, ratings)                        |
-| Geocoding     | Static ZIP→lat/lon using SimpleMaps CSV                            |
-| Radius Filter | Python-based haversine distance (not PostGIS)                      |
-| AI Model      | GPT-4o via OpenAI, constrained with grounding & SQL-only responses |
-| Async Stack   | Fully async with FastAPI + SQLAlchemy                              |
-| Ratings       | Random mock (1-10), joined by provider\_id                         |
+🖥️ Deployment (Optional)
+Use Docker Compose for local deployment:
 
----
+bash
+Copy
+Edit
+docker-compose up --build
+📄 License
+MIT License. See LICENSE file.
 
-## 🔮 Future Directions
-
-| Feature               | Description                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| 🔍 Fuzzy DRG search   | Map typos or variants like "knee replace" → DRG 470                |
-| 📍 NLP for ZIP/radius | Parse phrases like "within 20km of 10001" into filter logic        |
-| 📊 Chart API          | Return chart-ready schemas for frontend (e.g. bar/pie comparisons) |
-| ⭐ Real Ratings        | Pull actual Medicare star ratings                                  |
-| ⚡ Query Caching       | Cache frequent responses (e.g. Redis)                              |
-| 🩺 More Procedures    | Ingest more DRG types for broader coverage                         |
-| 👤 User Accounts      | Save preferences, searches, bookmarks                              |
-
----
-
-## 📦 Data Sources
-
-* **Pricing**: CMS Provider Utilization & Payment Data (NY sample)
-* **ZIP Codes**: [SimpleMaps US ZIP Code Database](https://simplemaps.com/data/us-zips)
-* **Ratings**: Synthetic (1-10), mock-generated
-
----
-
-## 🪪 License
-
-MIT License - See LICENSE file for full details.
+🙋‍♂️ Author
+Built by Dongyu Lin for the Outfox Health Founding Engineer Challenge.
