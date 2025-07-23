@@ -1,6 +1,6 @@
 import pandas as pd
 from geopy.distance import geodesic
-import functools
+
 
 # Load ZIP codes once when module is imported
 print("Loading ZIP code database...")

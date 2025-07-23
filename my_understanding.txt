@@ -1,62 +1,137 @@
-
-
-
-
-PART1 :
-
-Build a fastapi backend system support async request for 
-/get endpoint and we want it non-blocking, of course.
-
+🩺 Part 1: Building /providers API — Structured Hospital Search
+✅ Goal
+Support the API:
 GET /providers?drg=470&zip=10001&radius_km=40
+→ Return a list of hospitals performing the specified DRG procedure within a ZIP code radius, sorted by cost.
+
+🔍 Problem Breakdown
+Parameters:
+drg: Diagnosis-Related Group code (e.g., 470 = knee replacement)
+
+zip: ZIP code to center the search
+
+radius_km: Radius in kilometers for filtering
+
+Desired Output:
+All hospitals that perform the given DRG
+
+Must be within the radius of the input ZIP code
+
+Sorted by average_covered_charges (cost of procedure)
+
+🧱 Database Schema Design
+1. providers table
+Basic hospital info from CSV:
+
+provider_id (Rndrng_Prvdr_CCN)
+
+name (Rndrng_Prvdr_Org_Name)
+
+city, state, zip_code
+
+2. procedures table
+Each DRG performed by each provider:
+
+provider_id (FK)
+
+drg_code, drg_description
+
+total_discharges
+
+average_covered_charges
+
+average_total_payments
+
+average_medicare_payments
+
+🚧 Difficulty: Geospatial Radius Filtering
+To filter hospitals within radius_km of a ZIP, we need geographic coordinates.
+
+Option 1: Nominatim API (❌ Failed)
+Caused HTTP 429 and timeout errors under load
+
+Unreliable for batch lookups or production use
+
+Option 2: PostGIS (❌ Not Available)
+Ideal SQL-native radius filtering
+
+Not supported on Supabase (free tier restriction)
+
+✅ Solution: ZIP Coordinate Mapping via SimpleMaps
+We used SimpleMaps US ZIP Code Dataset for offline geocoding:
+
+Mapped each ZIP code to (lat, lon)
+
+Added lat/lon to the providers table during ETL
+
+Used Python’s geopy.distance.geodesic() to compute runtime distances
+
+🧪 Result
+FastAPI backend with /providers endpoint
+
+Non-blocking async requests using SQLAlchemy + thread pool for distance calcs
+
+Hospitals filtered by ZIP radius
+
+Sorted by average_covered_charges (ascending)
 
 
-where it have 3 parameter on the request
-and
-it means:
-List of hospitals with knee replacement procedures, sorted by cost
 
-drg zip radius_km
+ok part 2 is just using LLM and prompt engineering so
+when question -> using model llm capabilty to covert natural language like question to 
+sql opeartion syntax, then use the syntax to apply.
 
+it seems fun,
 
-first, let's take a look DRG , DRG = Diagnosis-Related Group
+and now we are design a prompt, and add a new database for the ratings
 
-after reading the csv file, I am assuiming we need :
-DRG_Cd	DRG_Desc from csv, it represent the number(code) and the description of that procedure
- 
-ok good,
-Next
-zip, so we need zip  radius_km, ok it's the same thing, so we need to list each hospital zip, and for better 
-display we just list all the info, let's building first one.
+oh wait, it also need to grounding , so we need to update prompts too.
 
-so provider:
-Rndrng_Prvdr_CCN	Rndrng_Prvdr_Org_Name	Rndrng_Prvdr_City Rndrng_Prvdr_St,Rndrng_Prvdr_Zip5	Rndrng_Prvdr_State_Abrvtn
-hospital code, hospital name, hospital city, hospital address, hospital zipcode, hospital state
+curl -X 'POST' \
+  'http://localhost:8000/ask' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "question": "What'\''s the cheapest hospital for knee replacement?"
+}'
 
+{
+  "answer": "Generated SQL: SELECT p.name, p.city, p.state, pr.avg_total_payments\nFROM procedures pr\nJOIN providers p ON pr.provider_id = p.provider_id\nWHERE pr.drg_code = '470'\nORDER BY pr.avg_total_payments ASC\nLIMIT 1;",
+  "sql_query": "SELECT p.name, p.city, p.state, pr.avg_total_payments\nFROM procedures pr\nJOIN providers p ON pr.provider_id = p.provider_id\nWHERE pr.drg_code = '470'\nORDER BY pr.avg_total_payments ASC\nLIMIT 1;"
+}
 
-ok since we do the radius_km, maybe we can just use zipcode insted of the actual address,
+curl -X 'POST' \
+  'http://localhost:8000/ask' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "question": "What'\''s wealth today?"
+}'{
+  "answer": "I can only help with hospital pricing and quality information. Please ask about medical procedures, costs, or hospital ratings.",
+  "sql_query": null
+}
 
-so building a table of provider, the hospital info,
-we just use provider_id, name, city, state, zipcode. it's good enough
+curl -X 'POST' \
+  'http://localhost:8000/ask' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "question": "who are you?"
+}'
+{
+  "answer": "I can only help with hospital pricing and quality information. Please ask about medical procedures, costs, or hospital ratings.",
+  "sql_query": null
+}
 
+curl -X 'POST' \
+  'http://localhost:8000/ask' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "question": "What'\''s the most expensive hospital for knee replacement?"
+}'{
+  "answer": "Generated SQL: SELECT provider_id, name, city, state, avg_total_payments\nFROM providers\nJOIN procedures ON providers.provider_id = procedures.provider_id\nWHERE drg_code = '470'\nORDER BY avg_total_payments DESC\nLIMIT 1;",
+  "sql_query": "SELECT provider_id, name, city, state, avg_total_payments\nFROM providers\nJOIN procedures ON providers.provider_id = procedures.provider_id\nWHERE drg_code = '470'\nORDER BY avg_total_payments DESC\nLIMIT 1;"
+}
 
-ok, then for each hospital, we build another table, that's for what procedure is this hospital provide, and
-their each payment info
-
-so procedures table
-provider id, drg code, drg_desc, 
-ok and it sort by cost, 
-which one, lets take a look sorted by average_covered_charges
-ok, so it must add there,
-
-but wait, we maybe need total_discharges and all other info to do the ratings? it's valueable.
-
-
-ok, now it's clear,
-
-panda reads the csv, extract the column, build tabels on supabase, build tabels for first request
-
-REST API endpoints:
-GET /providers - Search hospitals by DRG, ZIP code, and radius_km
-Returns hospitals sorted by average_covered_charges
-Implements DRG description matching using ILIKE or fuzzy search
-
+first trial seems okay

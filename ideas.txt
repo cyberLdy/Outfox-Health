@@ -1,7 +1,23 @@
-the task is aimed for stuctured data with sql q&a on LLMs
+Reflections on LLM Querying and Data Structure
+The current task focuses on structured data (hospital pricing in CSV format) and aims to enable natural language (NL) to SQL translation using LLMs. This is well-suited for:
 
-but the major difficuitlt is on unstructured data like pdf, or any other guideance documents,
+Tabular data
 
-it's needed for most cenriaor, but anyway, it's not asking for rag yet, just recoomendation
-and its needed vector datbase for unstructured, but strucuted, sql is good enough, no mistakes.
+Clear schema (e.g., DRG codes, ZIP codes, ratings)
+
+Reliable results via SQL-based grounding
+
+
+However, in real-world scenarios, unstructured data (like PDFs, medical guidelines, or clinical notes) is often more common and challenging. These cases would typically require:
+
+RAG (Retrieval-Augmented Generation) pipelines
+
+Vector databases for semantic search
+
+More complex parsing and grounding mechanisms
+
+That said, this exercise intentionally avoids RAG to test LLM-driven SQL generation, which is appropriate given the structured dataset and MVP scope.
+
+✅ Conclusion: For structured data, SQL + OpenAI is sufficient and robust.
+⚠️ For unstructured data, LLMs would need vector search and RAG to perform reliably.
 

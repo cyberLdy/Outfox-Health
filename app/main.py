@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import providers  # Add this import
+from app.routers import providers, ai_assistant  # Add ai_assistant
 
 app = FastAPI(title="Healthcare Cost Navigator")
 
@@ -17,5 +17,6 @@ app.add_middleware(
 async def root():
     return {"message": "Healthcare Cost Navigator API", "endpoints": ["/providers", "/ask"]}
 
-# Include the providers router
+# Include routers
 app.include_router(providers.router)
+app.include_router(ai_assistant.router)  # Add this line
