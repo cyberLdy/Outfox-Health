@@ -135,3 +135,16 @@ curl -X 'POST' \
 }
 
 first trial seems okay
+
+
+now:
+
+import requests
+
+response = requests.post(
+    "http://localhost:8000/ask",
+    json={"question": "What's the cheapest hospital for knee replacement?"}
+)
+print(response.json())
+
+{'answer': 'The cheapest hospital is Cambridge Health Alliance in Cambridge, MA with an average covered charge of $17,785.20', 'sql_query': "SELECT providers.name, providers.city, providers.state, procedures.avg_covered_charges \nFROM providers \nJOIN procedures ON providers.provider_id = procedures.provider_id \nWHERE procedures.drg_code = '470' \nORDER BY procedures.avg_covered_charges ASC LIMIT 1;"}

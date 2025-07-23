@@ -30,3 +30,24 @@ PostGIS	SQL-native, scalable	Not available on Supabase
 SimpleMaps ✅	Fast, offline, free	Slight inaccuracy possible
 
 Conclusion: SimpleMaps + Python was the best cost-free, offline solution under Supabase constraints.
+
+
+
+the grounding on the response:
+
+first:
+
+{'answer': 'The cheapest hospital is Cambridge Health Alliance in Cambridge, MA with an average covered charge of $17,785.20', 'sql_query': "SELECT providers.name, providers.city, providers.state, procedures.avg_covered_charges \nFROM providers \nJOIN procedures ON providers.provider_id = procedures.provider_id \nWHERE procedures.drg_code = '470' \nORDER BY procedures.avg_covered_charges ASC LIMIT 1;"}
+
+
+The issue is that the AI sometimes adds LIMIT 1 and sometimes doesn't. 
+Also, our answer formatting isn't smart enough. Let's fix both issues.
+
+===== Test 1: What's the cheapest hospital for knee replacement? =====
+{'answer': 'Found 1371 results. Here are the details:\n- Cambridge Health Alliance in Cambridge, MA\n- Beverly Hospital Corporation in Beverly, MA\n- West Calcasieu Cameron Hospital in Sulphur, LA\n- Excela Health Westmoreland Hospital in Greensburg, PA\n- Tidalhealth Peninsula Regional, Inc in Salisbury, MD\n', 'sql_query': "SELECT p.name, p.city, p.state, proc.avg_covered_charges \nFROM providers p \nJOIN procedures proc ON p.provider_id = proc.provider_id \nWHERE proc.drg_code = '470' \nORDER BY proc.avg_covered_charges ASC;"}
+
+===== Test 2: Which hospitals have the best ratings for knee replacement? =====
+{'answer': 'Found 1371 results. Here are the details:\n- Prisma Health  Patewood Hospital in Greenville, SC\n- Beckley Arh Hospital in Beckley, WV\n- Steward North Shore Medical Center in Miami, FL\n- Halifax Health Medical Center in Daytona Beach, FL\n- Staten Island University Hospital in Staten Island, NY\n', 'sql_query': "SELECT p.name, p.city, p.state, r.rating \nFROM providers p\nJOIN procedures pr ON p.provider_id = pr.provider_id\nJOIN ratings r ON p.provider_id = r.provider_id\nWHERE pr.drg_code = 
+'470'\nORDER BY r.rating DESC;"}
+
+solution, update prompts
