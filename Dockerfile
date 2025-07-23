@@ -15,11 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY ./app ./app
 COPY ./etl ./etl
-COPY .env .env
 
 # Copy data files
 COPY uszips.csv .
 COPY MUP_INP_RY24_P03_V10_DY22_PrvSvc.csv .
+COPY Hospital_General_Information.csv .   
 
 # Expose port
 EXPOSE 8000

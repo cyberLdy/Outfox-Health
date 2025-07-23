@@ -78,21 +78,56 @@ def run_etl():
         session.commit()
         print("✅ Procedures loaded!")
         
-        # Generate and load ratings
-        print("Generating mock ratings...")
+        # Load CMS ratings
+        print("Loading CMS hospital ratings...")
+        cms_ratings = pd.read_csv('Hospital_General_Information.csv', encoding='utf-8')
+        cms_ratings['Facility ID'] = cms_ratings['Facility ID'].astype(str)
+        
+        # Create rating mapping
+        rating_map = {}
+        for _, row in cms_ratings.iterrows():
+            facility_id = str(row['Facility ID'])
+            rating = row['Hospital overall rating']
+            
+            # Convert rating to numeric (1-5 scale to 2-10 scale)
+            if rating != 'Not Available':
+                try:
+                    rating_map[facility_id] = int(rating) * 2  # Convert 1-5 to 2-10 scale
+                except:
+                    pass
+        
+        print(f"Loaded {len(rating_map)} real ratings from CMS data")
+        
+        # Generate and load ratings (real + mock for missing)
+        print("Loading ratings (real + mock for missing)...")
+        ratings_added = 0
+        mock_count = 0
+        
         for provider_id in providers_df['Rndrng_Prvdr_CCN'].unique():
+            provider_id_str = str(provider_id)
+            
+            # Use real rating if available
+            if provider_id_str in rating_map:
+                rating_value = rating_map[provider_id_str]
+            else:
+                # Generate mock rating for missing (4-9 range)
+                rating_value = random.randint(4, 9)
+                mock_count += 1
+            
             rating = Rating(
-                provider_id=str(provider_id),
-                rating=random.randint(1, 10)  # Random rating 1-10
+                provider_id=provider_id_str,
+                rating=rating_value
             )
             session.add(rating)
+            ratings_added += 1
         
         # Commit ratings
         session.commit()
-        print("✅ Ratings loaded!")
+        print(f"✅ Ratings loaded! Total: {ratings_added} (Real: {ratings_added - mock_count}, Mock: {mock_count})")
         
         print("\n🎉 ETL complete!")
-        print(f"Loaded: {len(providers_df)} providers, {len(df)} procedures, {len(providers_df)} ratings")
+        print(f"Loaded: {len(providers_df)} providers, {len(df)} procedures, {ratings_added} ratings")
+        print(f"Rating breakdown: {ratings_added - mock_count} real CMS ratings, {mock_count} mock ratings")
         
     except Exception as e:
         print(f"❌ Error: {e}")

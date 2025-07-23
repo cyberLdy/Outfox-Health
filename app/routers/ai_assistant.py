@@ -41,14 +41,15 @@ def format_answer(question: str, rows: list, sql_query: str) -> str:
         n = int(top_n_match.group(1))
         answer = f"Here are the top {min(n, len(rows))} results:\n"
         for i, row in enumerate(rows[:n], 1):
-            if "cheapest" in question_lower and len(row) >= 4:
-                try:
-                    price = float(row[3])
-                    answer += f"{i}. {row[0]} in {row[1]}, {row[2]} - ${price:,.2f}\n"
-                except:
-                    answer += f"{i}. {row[0]} in {row[1]}, {row[2]}\n"
-            else:
+            # Format based on available columns
+            if len(row) >= 4:
+                answer += f"{i}. {row[0]} in {row[1]}, {row[2]} - ${row[3]:,.2f}\n"
+            elif len(row) >= 3:
                 answer += f"{i}. {row[0]} in {row[1]}, {row[2]}\n"
+            elif len(row) >= 2:
+                answer += f"{i}. {row[0]} - {row[1]}\n"
+            else:
+                answer += f"{i}. {row[0]}\n"
         return answer.strip()
     
     # Single result keywords
@@ -56,33 +57,50 @@ def format_answer(question: str, rows: list, sql_query: str) -> str:
     is_single_result = any(keyword in question_lower for keyword in single_result_keywords)
     
     if is_single_result and len(rows) >= 1:
-        # Format single result
+        # Format single result based on available columns
         row = rows[0]
+        
         if "cheapest" in question_lower:
-            # Find the price column
-            price = None
-            for i in range(len(row)-1, -1, -1):
-                try:
-                    price = float(row[i])
-                    if price > 1000:  # Likely a price, not a rating
-                        break
-                except (ValueError, TypeError):
-                    continue
+            if len(row) >= 4:
+                # Find price column
+                price = None
+                for i in range(len(row)-1, -1, -1):
+                    try:
+                        price = float(row[i])
+                        if price > 1000:  # Likely a price
+                            break
+                    except:
+                        continue
+                if price:
+                    return f"The cheapest hospital is {row[0]} in {row[1]}, {row[2]} with an average covered charge of ${price:,.2f}"
+            return f"The cheapest hospital is {row[0]}"
             
-            if price:
-                return f"The cheapest hospital is {row[0]} in {row[1]}, {row[2]} with an average covered charge of ${price:,.2f}"
-            else:
-                return f"The cheapest hospital is {row[0]} in {row[1]}, {row[2]}"
         elif "best rating" in question_lower:
-            rating = row[-1] if len(row) > 3 else "N/A"
-            return f"The hospital with the best rating is {row[0]} in {row[1]}, {row[2]} with a rating of {rating}/10"
+            if len(row) == 2:  # name, rating
+                return f"The hospital with the best rating is {row[0]} with a rating of {row[1]}/10"
+            elif len(row) >= 4:  # name, city, state, rating
+                return f"The hospital with the best rating is {row[0]} in {row[1]}, {row[2]} with a rating of {row[3]}/10"
+            else:
+                return f"The hospital with the best rating is {row[0]}"
+                
         else:
-            return f"Result: {row[0]} in {row[1]}, {row[2]}"
+            # Generic single result
+            if len(row) >= 3:
+                return f"Result: {row[0]} in {row[1]}, {row[2]}"
+            elif len(row) >= 2:
+                return f"Result: {row[0]} - {row[1]}"
+            else:
+                return f"Result: {row[0]}"
     else:
-        # Multiple results without "top N"
+        # Multiple results
         answer = f"Found {len(rows)} results. Here are the top 5:\n"
         for row in rows[:5]:
-            answer += f"- {row[0]} in {row[1]}, {row[2]}\n"
+            if len(row) >= 3:
+                answer += f"- {row[0]} in {row[1]}, {row[2]}\n"
+            elif len(row) >= 2:
+                answer += f"- {row[0]} (Rating: {row[1]})\n"
+            else:
+                answer += f"- {row[0]}\n"
     
     return answer.strip()
 

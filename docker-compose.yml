@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - .env # This loads at RUNTIME, not built into image
+    volumes:
+      - ./app:/app/app  # For development hot reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - db_check
+
+  db_check:
+    image: busybox
+    command: echo "Using external Supabase database"
+
+volumes:
+  app_data:
