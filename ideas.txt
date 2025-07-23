@@ -1,0 +1,7 @@
+the task is aimed for stuctured data with sql q&a on LLMs
+
+but the major difficuitlt is on unstructured data like pdf, or any other guideance documents,
+
+it's needed for most cenriaor, but anyway, it's not asking for rag yet, just recoomendation
+and its needed vector datbase for unstructured, but strucuted, sql is good enough, no mistakes.
+

@@ -1,0 +1,62 @@
+
+
+
+
+PART1 :
+
+Build a fastapi backend system support async request for 
+/get endpoint and we want it non-blocking, of course.
+
+GET /providers?drg=470&zip=10001&radius_km=40
+
+
+where it have 3 parameter on the request
+and
+it means:
+List of hospitals with knee replacement procedures, sorted by cost
+
+drg zip radius_km
+
+
+first, let's take a look DRG , DRG = Diagnosis-Related Group
+
+after reading the csv file, I am assuiming we need :
+DRG_Cd	DRG_Desc from csv, it represent the number(code) and the description of that procedure
+ 
+ok good,
+Next
+zip, so we need zip  radius_km, ok it's the same thing, so we need to list each hospital zip, and for better 
+display we just list all the info, let's building first one.
+
+so provider:
+Rndrng_Prvdr_CCN	Rndrng_Prvdr_Org_Name	Rndrng_Prvdr_City Rndrng_Prvdr_St,Rndrng_Prvdr_Zip5	Rndrng_Prvdr_State_Abrvtn
+hospital code, hospital name, hospital city, hospital address, hospital zipcode, hospital state
+
+
+ok since we do the radius_km, maybe we can just use zipcode insted of the actual address,
+
+so building a table of provider, the hospital info,
+we just use provider_id, name, city, state, zipcode. it's good enough
+
+
+ok, then for each hospital, we build another table, that's for what procedure is this hospital provide, and
+their each payment info
+
+so procedures table
+provider id, drg code, drg_desc, 
+ok and it sort by cost, 
+which one, lets take a look sorted by average_covered_charges
+ok, so it must add there,
+
+but wait, we maybe need total_discharges and all other info to do the ratings? it's valueable.
+
+
+ok, now it's clear,
+
+panda reads the csv, extract the column, build tabels on supabase, build tabels for first request
+
+REST API endpoints:
+GET /providers - Search hospitals by DRG, ZIP code, and radius_km
+Returns hospitals sorted by average_covered_charges
+Implements DRG description matching using ILIKE or fuzzy search
+

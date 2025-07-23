@@ -10,8 +10,6 @@ import os
 
 from app.models import Base, Provider, Procedure, Rating
 
-# Rest of your code...
-
 # Load environment variables
 load_dotenv()
 
@@ -21,7 +19,6 @@ DATABASE_URL = os.getenv("DATABASE_URL").replace("+asyncpg", "")
 print("Starting ETL process...")
 print(f"Connecting to database...")
 
-# Create tables and load data
 def run_etl():
     # Create engine (synchronous for ETL)
     engine = create_engine(DATABASE_URL)
@@ -48,11 +45,57 @@ def run_etl():
         
         print(f"Loading {len(providers_df)} providers...")
         
-        # More ETL code will go here...
-        print("ETL complete!")
+        # Load providers
+        for _, row in providers_df.iterrows():
+            provider = Provider(
+                provider_id=str(row['Rndrng_Prvdr_CCN']),
+                name=row['Rndrng_Prvdr_Org_Name'],
+                city=row['Rndrng_Prvdr_City'],
+                state=row['Rndrng_Prvdr_State_Abrvtn'],
+                zip_code=str(row['Rndrng_Prvdr_Zip5'])
+            )
+            session.add(provider)
+        
+        # Commit providers first
+        session.commit()
+        print("✅ Providers loaded!")
+        
+        # Load procedures
+        print(f"Loading {len(df)} procedures...")
+        for _, row in df.iterrows():
+            procedure = Procedure(
+                provider_id=str(row['Rndrng_Prvdr_CCN']),
+                drg_code=str(row['DRG_Cd']),
+                drg_description=row['DRG_Desc'],
+                total_discharges=int(row['Tot_Dschrgs']),
+                avg_covered_charges=float(row['Avg_Submtd_Cvrd_Chrg']),
+                avg_total_payments=float(row['Avg_Tot_Pymt_Amt']),
+                avg_medicare_payments=float(row['Avg_Mdcr_Pymt_Amt'])
+            )
+            session.add(procedure)
+        
+        # Commit procedures
+        session.commit()
+        print("✅ Procedures loaded!")
+        
+        # Generate and load ratings
+        print("Generating mock ratings...")
+        for provider_id in providers_df['Rndrng_Prvdr_CCN'].unique():
+            rating = Rating(
+                provider_id=str(provider_id),
+                rating=random.randint(1, 10)  # Random rating 1-10
+            )
+            session.add(rating)
+        
+        # Commit ratings
+        session.commit()
+        print("✅ Ratings loaded!")
+        
+        print("\n🎉 ETL complete!")
+        print(f"Loaded: {len(providers_df)} providers, {len(df)} procedures, {len(providers_df)} ratings")
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error: {e}")
         session.rollback()
     finally:
         session.close()
